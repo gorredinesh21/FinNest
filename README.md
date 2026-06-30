@@ -5,11 +5,7 @@ backend (`finnest-api`) and a **React + Redux** single-page frontend
 (`finnest-web`). Users can register, log in, open accounts, transfer funds,
 deposit/withdraw, make payments, and view a live-updating account chart.
 
-> **Attribution:** FinNest is a rebranded and modified derivative of the
-> open-source full-stack online banking project by
-> [@Berko01](https://github.com/Berko01). The original design and development
-> are by Berk Dündar; this version has been rebranded, fully translated to
-> English, refactored, and extended. See [`LICENSE`](./LICENSE) for details.
+
 
 ## Tech Stack
 
