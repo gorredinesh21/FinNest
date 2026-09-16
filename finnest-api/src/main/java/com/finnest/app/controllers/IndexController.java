@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -17,8 +20,14 @@ public class IndexController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/")
-    public String getIndex(){
+    @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
+    public Object getIndex() {
+        Resource spa = new ClassPathResource("/static/index.html");
+        if (spa.exists()) {
+            return org.springframework.http.ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(spa);
+        }
         return "FinNest API is running.";
     }
 
