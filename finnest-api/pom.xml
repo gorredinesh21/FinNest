@@ -113,7 +113,7 @@
       </resource>
       <resource>
         <directory>static</directory>
-        <target-path>static</target-path>
+        <targetPath>static</targetPath>
       </resource>
     </resources>
   
