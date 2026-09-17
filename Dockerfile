@@ -1,4 +1,4 @@
-# FinNest — single container: React build served from filesystem + Spring Boot API (H2 demo).
+# FinNest — nginx serves the React SPA, proxies /api to Spring Boot
 FROM node:20-slim AS web
 WORKDIR /web
 COPY finnest-web/package.json finnest-web/package-lock.json ./
@@ -14,16 +14,34 @@ COPY finnest-api/src ./src
 RUN mvn -q package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache nginx
 WORKDIR /app
 COPY --from=api /build/target/*.jar app.jar
 COPY --from=web /web/build ./web
-# Rename static/ to assets/ to avoid Spring Boot's default /static/ handler conflict
-RUN cd web && mv static assets 2>/dev/null; \
-    find . -name "*.html" -exec sed -i 's|/static/|/assets/|g' {} +; \
-    find assets -name "*.js" -exec sed -i 's|/static/|/assets/|g' {} + 2>/dev/null; \
-    find assets -name "*.css" -exec sed -i 's|/static/|/assets/|g' {} + 2>/dev/null; true
-ENV PORT=8080
-# Tell Spring Boot to serve the SPA from the filesystem
-ENV SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/app/web/
+
+# nginx config: serve SPA, proxy API
+RUN cat > /etc/nginx/http.d/default.conf <<'NGINX'
+server {
+    listen 8080;
+    location /api/ {
+        proxy_pass http://127.0.0.1:8070;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location / {
+        root /app/web;
+        try_files $uri /index.html;
+    }
+}
+NGINX
+
+# startup: Spring Boot on 8070, nginx on 8080
+RUN cat > /start.sh <<'SHELL'
+#!/bin/sh
+java -jar app.jar --server.port=8070 --server.address=127.0.0.1 &
+nginx -g 'daemon off;'
+SHELL
+RUN chmod +x /start.sh
+
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["/start.sh"]
