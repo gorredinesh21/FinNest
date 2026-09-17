@@ -35,7 +35,7 @@ public class StaticFilesController {
         ".map", "application/json"
     );
 
-    @GetMapping("/static/**")
+    @GetMapping("/assets/****")
     public ResponseEntity<Resource> serveStatic(javax.servlet.http.HttpServletRequest request) {
         String path = request.getRequestURI();
         return serveFile(path);
