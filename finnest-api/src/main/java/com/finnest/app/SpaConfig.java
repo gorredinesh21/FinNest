@@ -28,6 +28,13 @@ public class SpaConfig implements WebMvcConfigurer {
                             return requested;
                         }
                         // fall back to the SPA entry for client-side routing
+                        // Try filesystem (Docker: /app/web/) first, then classpath
+                        java.nio.file.Path webPath = java.nio.file.Paths.get("/app/web/index.html");
+                        if (java.nio.file.Files.exists(webPath)) {
+                            try {
+                                return new org.springframework.core.io.FileSystemResource(webPath.toFile());
+                            } catch (Exception e) { /* fall through */ }
+                        }
                         return new ClassPathResource("/static/index.html");
                     }
                 });

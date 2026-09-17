@@ -22,7 +22,9 @@ public class IndexController {
 
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     public Object getIndex() {
-        Resource spa = new ClassPathResource("/static/index.html");
+        Resource spa = java.nio.file.Files.exists(java.nio.file.Paths.get("/app/web/index.html"))
+                ? new org.springframework.core.io.FileSystemResource("/app/web/index.html")
+                : new ClassPathResource("/static/index.html");
         if (spa.exists()) {
             return org.springframework.http.ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)

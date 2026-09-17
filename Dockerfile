@@ -1,4 +1,4 @@
-# FinNest — single container: React web build + Spring Boot API (H2 demo mode).
+# FinNest — single container: React build served from filesystem + Spring Boot API (H2 demo).
 FROM node:20-slim AS web
 WORKDIR /web
 COPY finnest-web/package.json finnest-web/package-lock.json ./
@@ -12,13 +12,13 @@ COPY finnest-api/pom.xml .
 RUN mvn -q dependency:go-offline
 COPY finnest-api/src ./src
 RUN mvn -q package -DskipTests
-# Inject React build into the jar's classpath AFTER packaging
-COPY --from=web /web/build/ ./unpack/static/
-RUN cd unpack && jar -uf ../target/*.jar static/
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=api /build/target/*.jar app.jar
+COPY --from=web /web/build ./web
 ENV PORT=8080
+# Tell Spring Boot to serve the SPA from the filesystem
+ENV SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/app/web/
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
