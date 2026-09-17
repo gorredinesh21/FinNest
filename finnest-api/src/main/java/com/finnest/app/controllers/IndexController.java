@@ -21,8 +21,14 @@ public class IndexController {
     private UserRepository userRepository;
 
     @GetMapping("/")
-    public String getIndex(){
-        return "FinNest API is running.";
+    public ResponseEntity<Object> getIndex() {
+        java.nio.file.Path index = java.nio.file.Paths.get("/app/web/index.html");
+        if (java.nio.file.Files.exists(index)) {
+            return ResponseEntity.ok()
+                .header("Content-Type", "text/html")
+                .body(new org.springframework.core.io.FileSystemResource(index));
+        }
+        return ResponseEntity.ok("FinNest API is running.");
     }
 
     @GetMapping("/verify")
