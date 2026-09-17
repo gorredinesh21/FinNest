@@ -20,16 +20,8 @@ public class IndexController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
-    public Object getIndex() {
-        Resource spa = java.nio.file.Files.exists(java.nio.file.Paths.get("/app/web/index.html"))
-                ? new org.springframework.core.io.FileSystemResource("/app/web/index.html")
-                : new ClassPathResource("/static/index.html");
-        if (spa.exists()) {
-            return org.springframework.http.ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_HTML)
-                    .body(spa);
-        }
+    @GetMapping("/")
+    public String getIndex(){
         return "FinNest API is running.";
     }
 

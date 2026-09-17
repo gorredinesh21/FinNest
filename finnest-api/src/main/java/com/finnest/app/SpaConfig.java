@@ -1,41 +1,57 @@
 package com.finnest.app;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
- * Serves the built React SPA from classpath:/static when present, falling back
- * to index.html for client-side routes. API routes under /api/** take priority
- * (they are mapped by controllers before this handler).
+ * Serves the React SPA from /app/web/ (container deploy) or classpath:/static/.
+ * API routes mapped by controllers are unaffected (they register first).
  */
 @Configuration
 public class SpaConfig implements WebMvcConfigurer {
+    private static final Path WEB_DIR = Paths.get("/app/web");
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String location;
+        if (Files.exists(WEB_DIR.resolve("index.html"))) {
+            location = "file:" + WEB_DIR + "/";
+        } else {
+            location = "classpath:/static/";
+        }
+
+        registry.addResourceHandler("/static/**", "/favicon.ico", "/manifest.json",
+                        "/logo*.png", "/apple-touch-icon*.png")
+                .addResourceLocations(location)
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver());
+
+        // SPA fallback for client-side routes (but NOT for /api/** which is
+        // handled by controllers)
         registry.addResourceHandler("/**")
+                .addResourceLocations(location)
                 .resourceChain(true)
                 .addResolver(new PathResourceResolver() {
                     @Override
-                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                        Resource requested = location.createRelative(resourcePath);
+                    protected org.springframework.core.io.Resource getResource(
+                            String resourcePath,
+                            org.springframework.core.io.Resource location1) throws java.io.IOException {
+                        org.springframework.core.io.Resource requested = location1.createRelative(resourcePath);
                         if (requested.exists() && requested.isReadable()) {
                             return requested;
                         }
-                        // fall back to the SPA entry for client-side routing
-                        // Try filesystem (Docker: /app/web/) first, then classpath
-                        java.nio.file.Path webPath = java.nio.file.Paths.get("/app/web/index.html");
-                        if (java.nio.file.Files.exists(webPath)) {
-                            try {
-                                return new org.springframework.core.io.FileSystemResource(webPath.toFile());
-                            } catch (Exception e) { /* fall through */ }
+                        if (resourcePath.startsWith("api/")) {
+                            return null; // let controllers handle it
                         }
-                        return new ClassPathResource("/static/index.html");
+                        // SPA fallback
+                        org.springframework.core.io.Resource index = location1.createRelative("index.html");
+                        return index.exists() ? index : null;
                     }
                 });
     }
