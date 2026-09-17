@@ -11,13 +11,13 @@ WORKDIR /build
 COPY finnest-api/pom.xml .
 RUN mvn -q dependency:go-offline
 COPY finnest-api/src ./src
-COPY --from=web /web/build ./static
+COPY --from=web /web/build/ ./target/classes/static/
 RUN mvn -q package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=api /build/target/*.jar app.jar
-COPY --from=web /web/build ./static
+COPY --from=web /web/build/ ./target/classes/static/
 ENV PORT=8080
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
